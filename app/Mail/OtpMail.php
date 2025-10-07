@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -12,10 +13,12 @@ class OtpMail extends Mailable
     use Queueable, SerializesModels;
 
     public $code;
+    public $subjec;
 
-    public function __construct($code)
+    public function __construct($code, $subjectLine = null)
     {
         $this->code = $code;
+        $this->subject = $subject ?? 'Your OTP Code';
     }
 
     /**
@@ -24,7 +27,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your OTP Code is: ',
+            subject: $this->subject,
         );
     }
 
@@ -35,6 +38,10 @@ class OtpMail extends Mailable
     {
         return new Content(
             view: 'mails.otp',
+            with: [
+                'code' => $this->code,
+                'expires_in_minutes' => 5,
+            ],
         );
     }
 
@@ -45,6 +52,6 @@ class OtpMail extends Mailable
      */
     public function attachments(): array
     {
-        return ['code' => $this->code];
+        return [];
     }
 }

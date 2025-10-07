@@ -7,6 +7,15 @@ use App\Models\Subcategory;
 use App\Models\Category;
 class SubcategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:list')->only('index');
+        $this->middleware('permission:create')->only(['create', 'store']);
+        $this->middleware('permission:update')->only(['edit', 'update']);
+        $this->middleware('permission:delete')->only('destroy');
+    }
+    
     public function index()  { 
         $categories = Category::with('subcategories')->get();
         return view('backend.subcategory.index', compact('categories')); 

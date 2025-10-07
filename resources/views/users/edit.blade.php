@@ -4,12 +4,19 @@
 
 @push('css')
     <style>
-        /* custom dashboard styles */
+        .avatar-preview {
+            width: 120px;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
     </style>
 @endpush
 
 @section('content')
-    <form action="{{ route('users.update', $user->id) }}" method="POST" class="m-1 p-3">
+    <form enctype="multipart/form-data" action="{{ route('users.update', $user->id) }}" method="POST" class="m-1 p-3">
         @csrf
         @method('PUT')
 
@@ -51,6 +58,43 @@
                             <input type="hidden" name="role" value="{{ $user->role }}">
                         </div>
 
+                        {{-- Permissions --}}
+                        @if ($user->role !== 'super_admin')
+                            <div class="mb-3">
+                                <label class="form-label d-flex align-items-center gap-2">
+                                    Permissions <span class="text-danger">*</span>
+                                    <small class="text-muted">(Select at least one)</small>
+                                </label>
+
+                                <div class="row g-2">
+                                    @php
+                                        $selectedPerms = collect(old('permissions', $user_permission_ids ?? []))
+                                            ->map(fn($v) => (int) $v)
+                                            ->all();
+                                    @endphp
+
+                                    @foreach ($permissions as $perm)
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                    id="perm-{{ $perm->id }}" value="{{ $perm->id }}"
+                                                    {{ in_array($perm->id, $selectedPerms, true) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="perm-{{ $perm->id }}">
+                                                    {{ $perm->name }} <small
+                                                        class="text-muted">({{ $perm->slug }})</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @error('permissions')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
+
+
                         {{-- Name --}}
                         <div class="mb-3">
                             <label class="form-label">Name <span class="text-danger">*</span></label>
@@ -73,7 +117,51 @@
                         </div>
                         <small class="text-muted d-block mb-3">Provide at least one: <b>Email</b> or <b>Phone</b>.</small>
 
-                        {{-- Password removed / not editable --}}
+                        {{-- Profile Image --}}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                @error('image')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end gap-3">
+                                @php
+                                    $placeholder = asset('backend/assets/images/users/user-5.jpg');
+                                    $src = $user->image ? asset('storage/' . $user->image) : $placeholder;
+                                @endphp
+                                <img id="imagePreview" src="{{ $src }}" alt="Current" class="avatar-preview">
+                                <small class="text-muted">Upload to replace. JPG/PNG/WebP, max 2MB</small>
+                            </div>
+                        </div>
+
+                        {{-- Password (only for self update) --}}
+                        @if (auth()->id() === $user->id)
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="change_password" name="change_password"
+                                    value="1" {{ old('change_password') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="change_password">Change my password</label>
+                            </div>
+
+                            <div id="passwordFields" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" name="password" id="password" class="form-control"
+                                            minlength="8" disabled>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Confirm Password</label>
+                                        <input type="password" name="password_confirmation" id="password_confirmation"
+                                            class="form-control" minlength="8" disabled>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mb-3">At least 8 characters. Both fields are required when
+                                    enabled.</small>
+                            </div>
+                        @endif
+
 
                         <div class="d-flex gap-2">
                             <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">Back</a>
@@ -99,8 +187,61 @@
                 if (!email.value.trim() && !phone.value.trim()) {
                     e.preventDefault();
                     alert('Please provide at least one contact: Email or Phone.');
+                    return;
+                }
+
+                // permission selection if the section exists
+                const permInputs = document.querySelectorAll('input[name="permissions[]"]');
+                if (permInputs.length > 0) {
+                    const anyChecked = Array.from(permInputs).some(i => i.checked);
+                    if (!anyChecked) {
+                        e.preventDefault();
+                        alert('Please select at least one permission.');
+                        return;
+                    }
                 }
             });
+
+            // Live preview on edit
+            const image = document.getElementById('image');
+            const imagePreview = document.getElementById('imagePreview');
+            if (image) {
+                image.addEventListener('change', function() {
+                    const file = this.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = e => imagePreview.src = e.target.result;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Password toggle (only for self-update)
+            const changeChk = document.getElementById('change_password');
+            const pwdWrap = document.getElementById('passwordFields');
+            const pwd = document.getElementById('password');
+            const pwd2 = document.getElementById('password_confirmation');
+
+            function syncPasswordUI() {
+                if (!changeChk) return;
+                const on = changeChk.checked;
+                if (pwdWrap) pwdWrap.style.display = on ? '' : 'none';
+                [pwd, pwd2].forEach((el) => {
+                    if (!el) return;
+                    if (on) {
+                        el.removeAttribute('disabled');
+                        el.setAttribute('required', 'required');
+                    } else {
+                        el.value = '';
+                        el.setAttribute('disabled', 'disabled');
+                        el.removeAttribute('required');
+                    }
+                });
+            }
+
+            if (changeChk) {
+                changeChk.addEventListener('change', syncPasswordUI);
+                syncPasswordUI();
+            }
         });
     </script>
 @endpush

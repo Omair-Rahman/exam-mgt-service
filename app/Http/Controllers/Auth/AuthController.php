@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use RealRashid\SweetAlert\Facades\Alert;
 use Throwable;
@@ -43,7 +44,7 @@ class AuthController extends Controller
             $tokenCookie = null;
             try {
                 if (config('auth.guards.api.driver') === 'jwt') {
-                    $token = auth('api')->login(Auth::user());
+                    $token = JWTAuth::fromUser(Auth::user());
 
                     // Build cookie safely (secure only in production)
                     $minutes     = 60;
@@ -81,7 +82,7 @@ class AuthController extends Controller
         // Try to logout API guard if present
         try {
             if (config('auth.guards.api.driver') === 'jwt') {
-                auth('api')->logout();
+                JWTAuth::invalidate(JWTAuth::getToken());
             }
         } catch (Throwable $e) {
             // ignore; token may be missing/expired

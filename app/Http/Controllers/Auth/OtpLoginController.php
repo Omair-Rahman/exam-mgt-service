@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -8,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class OtpLoginController extends Controller
 {
@@ -35,9 +37,10 @@ class OtpLoginController extends Controller
             'expires_at'      => now()->addMinutes(5),
         ]);
 
-        // if ($identifierType === 'email') {
-        //     Mail::to($identifier)->send(new OtpMail($code));
-        // }
+        if ($identifierType === 'email') {
+            $subject = 'Password Reset Code for Your Account';
+            Mail::to($identifier)->send(new OtpMail($code, $subject));
+        }
 
         return redirect()->route('otp.verify.show', ['identifier' => $identifier])
             ->with('status', 'OTP sent');
@@ -77,7 +80,7 @@ class OtpLoginController extends Controller
         if ($user && $user->isRole('examinee')) {
             Auth::login($user);
 
-            $token = auth('api')->login($user);
+            $token = JWTAuth::fromUser($user);
             return redirect()->route('dashboard')
                 ->cookie(cookie()->make('token', $token, 60, null, null, true, true, false, 'Lax'));
         }

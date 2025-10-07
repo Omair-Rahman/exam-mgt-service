@@ -1,9 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Auth\ExamineeRegistrationController;
 use App\Http\Controllers\Auth\OtpLoginController;
 use App\Http\Controllers\Auth\UserManagementController;
+use App\Http\Controllers\Auth\PasswordResetOtpController;
+use App\Http\Controllers\Auth\ExamineeRegistrationController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExamineeDashboardController;
@@ -28,8 +29,16 @@ Route::post('/otp/verify', [OtpLoginController::class, 'verify'])->name('otp.ver
 Route::get('/examinee/register', [ExamineeRegistrationController::class, 'show'])->name('examinee.register.show');
 Route::post('/examinee/register', [ExamineeRegistrationController::class, 'store'])->name('examinee.register.store');
 
+Route::get('/password/forgot', [PasswordResetOtpController::class, 'show'])->name('password.forgot');
+Route::post('/password/forgot', [PasswordResetOtpController::class, 'send'])->name('password.forgot.send');
+
+Route::get('/password/reset-otp', [PasswordResetOtpController::class, 'showVerify'])->name('password.reset.otp');
+Route::post('/password/reset-otp', [PasswordResetOtpController::class, 'verifyAndReset'])->name('password.reset.otp.verify');
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {return view('dashboard');})->name('dashboard');
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth'])->prefix('dashboard')->group(function () {
@@ -42,11 +51,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/examinee', [ExamineeDashboardController::class, 'index'])->name('dashboard.examinee');
 
     // User management
-    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
-    Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
-    Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/create', [UserManagementController::class, 'create'])->name('create');
+        Route::post('/', [UserManagementController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
+    });
 
     // category routes
     Route::resource('categories', CategoryController::class)->except(['show']);

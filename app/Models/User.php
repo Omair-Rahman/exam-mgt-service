@@ -17,23 +17,14 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'phone',
-        'password',
-        'role',
-    ];
+    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'image', 'role_id'];
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     /**
      * Get the attributes that should be cast.
@@ -46,6 +37,16 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function permissions() // direct overrides
+    {
+        return $this->belongsToMany(Permission::class, 'user_permission')->withTimestamps();
     }
 
     // JWTSubject methods

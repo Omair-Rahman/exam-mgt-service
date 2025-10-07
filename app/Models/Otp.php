@@ -8,4 +8,9 @@ class Otp extends Model
 {
     protected $fillable = ['identifier','identifier_type','code','expires_at','isVerified'];
     protected $dates = ['expires_at'];
+
+    public function isExpired(): bool
+    {
+        return now()->greaterThan($this->expires_at);
+    }
 }

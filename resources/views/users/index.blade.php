@@ -63,6 +63,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
+                                    <th>Photo</th>
                                     <th>Name</th>
                                     <th>Role</th>
                                     <th>Email</th>
@@ -75,6 +76,14 @@
                                 @forelse($users as $i => $user)
                                     <tr>
                                         <td>{{ method_exists($users, 'firstItem') ? $users->firstItem() + $i : $loop->iteration }}
+                                        </td>
+                                        <td>
+                                            @php
+                                                $placeholder = asset('backend/assets/images/users/user-5.jpg'); // keep your existing placeholder
+                                                $src = $user->image ? asset('storage/' . $user->image) : $placeholder;
+                                            @endphp
+                                            <img src="{{ $src }}" alt="{{ $user->name }}" class="rounded-circle"
+                                                style="width:38px;height:38px;object-fit:cover;">
                                         </td>
                                         <td class="fw-semibold">{{ $user->name }}</td>
                                         <td>{{ ucfirst(str_replace('_', ' ', $user->role)) }}</td>

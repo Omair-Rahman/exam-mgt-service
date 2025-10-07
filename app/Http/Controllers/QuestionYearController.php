@@ -9,11 +9,14 @@ use RealRashid\SweetAlert\Facades\Alert;
 
 class QuestionYearController extends Controller
 {
-    // If you want auth/role protection, uncomment and ensure your role middleware alias exists:
-    // public function __construct()
-    // {
-    //     $this->middleware(['auth','role:super_admin,admin,employee']);
-    // }
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:list')->only('index');
+        $this->middleware('permission:create')->only(['create', 'store']);
+        $this->middleware('permission:update')->only(['edit', 'update']);
+        $this->middleware('permission:delete')->only('destroy');
+    }
 
     public function index()
     {

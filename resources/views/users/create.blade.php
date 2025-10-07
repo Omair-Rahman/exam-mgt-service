@@ -5,12 +5,19 @@
 @push('css')
     {{-- Page-specific styles go here --}}
     <style>
-        /* custom dashboard styles */
+        .avatar-preview {
+            width: 120px;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
     </style>
 @endpush
 
 @section('content')
-    <form action="{{ route('users.store') }}" method="POST" class="m-1 p-3">
+    <form enctype="multipart/form-data" action="{{ route('users.store') }}" method="POST" class="m-1 p-3">
         @csrf
 
         {{-- Header + quick button row (mirrors Category create look) --}}
@@ -47,12 +54,40 @@
                             <label class="form-label">Role <span class="text-danger">*</span></label>
                             <select name="role" id="role" class="form-select" required>
                                 <option value="">-- Select role --</option>
-                                <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin
-                                </option>
-                                <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-                                <option value="employee" {{ old('role') === 'employee' ? 'selected' : '' }}>Employee</option>
-                                <option value="examinee" {{ old('role') === 'examinee' ? 'selected' : '' }}>Examinee</option>
+                                @foreach ($roles as $r)
+                                    <option value="{{ $r->slug }}" {{ old('role') === $r->slug ? 'selected' : '' }}>
+                                        {{ $r->name }}
+                                    </option>
+                                @endforeach
                             </select>
+                        </div>
+
+                        {{-- Permissions --}}
+                        <div id="permissions-block" class="mb-3" style="display:none;">
+                            <label class="form-label d-flex align-items-center gap-2">
+                                Permissions <span class="text-danger">*</span>
+                                <small class="text-muted">(Select at least one)</small>
+                            </label>
+
+                            <div class="row g-2">
+                                @php $oldPerms = collect(old('permissions', []))->map(fn($v) => (int)$v)->all(); @endphp
+                                @foreach ($permissions as $perm)
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                id="perm-{{ $perm->id }}" value="{{ $perm->id }}"
+                                                {{ in_array($perm->id, $oldPerms, true) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="perm-{{ $perm->id }}">
+                                                {{ $perm->name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            @error('permissions')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         {{-- Name --}}
@@ -76,6 +111,22 @@
                             </div>
                         </div>
                         <small class="text-muted d-block mb-3">Provide at least one: <b>Email</b> or <b>Phone</b>.</small>
+
+                        {{-- Profile Image --}}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                @error('image')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end gap-3">
+                                <img id="imagePreview" src="{{ asset('backend/assets/images/users/user-5.jpg') }}"
+                                    alt="Preview" class="avatar-preview">
+                                <small class="text-muted">JPG/PNG/WebP, max 2MB</small>
+                            </div>
+                        </div>
 
                         {{-- Password (hidden/disabled when role = examinee) --}}
                         <div class="mb-3" id="password-wrapper">
@@ -127,6 +178,42 @@
                 if (!email.value.trim() && !phone.value.trim()) {
                     e.preventDefault();
                     alert('Please provide at least one contact: Email or Phone.');
+                }
+            });
+
+            // Live preview
+            image.addEventListener('change', function() {
+                const file = this.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e => imagePreview.src = e.target.result;
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
+@endpush
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSel = document.getElementById('role');
+            const permissionsBlock = document.getElementById('permissions-block');
+            const form = document.querySelector('form');
+
+            function togglePermissions() {
+                permissionsBlock.style.display = roleSel.value ? '' : 'none';
+            }
+            roleSel.addEventListener('change', togglePermissions);
+            togglePermissions(); // on load (respects old('role'))
+
+            // Require at least one permission
+            form.addEventListener('submit', function(e) {
+                if (!roleSel.value) return; // role validator will handle this
+
+                const checked = document.querySelectorAll('input[name="permissions[]"]:checked');
+                if (checked.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one permission.');
                 }
             });
         });

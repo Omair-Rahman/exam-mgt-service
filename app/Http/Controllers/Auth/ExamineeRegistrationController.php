@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 
 class ExamineeRegistrationController extends Controller
@@ -44,7 +45,7 @@ class ExamineeRegistrationController extends Controller
         ]);
 
         Auth::login($user);
-        $token = auth('api')->login($user);
+        $token = JWTAuth::fromUser($user);
         session()->forget('otp_verified_identifier');
 
         return redirect()->route('dashboard.examinee')

@@ -8,11 +8,19 @@ use App\Models\QuestionYear;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class QuestionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:list')->only('index');
+        $this->middleware('permission:create')->only(['create', 'store']);
+        $this->middleware('permission:update')->only(['edit', 'update']);
+        $this->middleware('permission:delete')->only('destroy');
+    }
+    
     public function index()
     {
         $questions = Question::with(['category','subcategory','questionYear'])

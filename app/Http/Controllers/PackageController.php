@@ -4,13 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PackageRequest;
 use App\Models\Category;
-use App\Models\InactivePackage;
 use App\Models\Package;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class PackageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:list')->only('index');
+        $this->middleware('permission:create')->only(['create', 'store']);
+        $this->middleware('permission:update')->only(['edit', 'update']);
+        $this->middleware('permission:delete')->only('destroy');
+    }
+    
     public function index()
     {
         $packages = Package::with('subjects:id,name')->latest()->get();
