@@ -19,6 +19,16 @@
                 <h4 class="fs-18 fw-semibold m-0">Examinee Dashboard</h4>
             </div>
         </div>
+        @php
+            $cd = \App\Models\CountdownSetting::first();
+        @endphp
+
+        @if($cd)
+            <x-countdown-widget
+                :title="$cd->title"
+                :target="$cd->target_at->toIso8601String()"
+                :serverNow="now()->toIso8601String()" />
+        @endif
 
         <!-- start row -->
         

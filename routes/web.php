@@ -12,14 +12,14 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuestionYearController;
 use App\Http\Controllers\SubcategoryController;
+use App\Http\Controllers\CountdownController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
+Route::view('/', 'welcome')->name('index');
 
 // Password login
 Route::get('/login', [AuthController::class, 'show'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/login/otp', [OtpLoginController::class, 'show'])->name('otp.show');
 Route::post('/otp/send', [OtpLoginController::class, 'send'])->name('otp.send');
@@ -36,15 +36,13 @@ Route::get('/password/reset-otp', [PasswordResetOtpController::class, 'showVerif
 Route::post('/password/reset-otp', [PasswordResetOtpController::class, 'verifyAndReset'])->name('password.reset.otp.verify');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::middleware(['auth'])->prefix('dashboard')->group(function () {
-        Route::get('/manager', [DashboardController::class, 'manager'])->name('dashboard.manager');
-        Route::get('/employee', [DashboardController::class, 'employee'])->name('dashboard.employee');
-        Route::get('/adv-user', [DashboardController::class, 'advUser'])->name('dashboard.adv-user');
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('/admin', [DashboardController::class, 'admin'])->name('admin');
+        Route::get('/manager', [DashboardController::class, 'manager'])->name('manager');
+        Route::get('/employee', [DashboardController::class, 'employee'])->name('employee');
+        Route::get('/adv-user', [DashboardController::class, 'advUser'])->name('adv-user');
     });
 
     // examinee dashboard route
@@ -57,6 +55,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [UserManagementController::class, 'store'])->name('store');
         Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
         Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
+        Route::get('/{id}', [UserManagementController::class, 'details'])->name('details');
+    });
+
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/{user}/edit', [UserManagementController::class, 'profile'])->name('edit');
     });
 
     // category routes
@@ -92,4 +95,12 @@ Route::middleware(['auth'])->group(function () {
     // (Optional AJAX endpoint — only if you want same-page switching without reload)
     Route::get('/ajax/questions/year/{year}', [QuestionController::class, 'ajaxByYear'])
         ->name('ajax.questions.byYear');
+
+    // CountDoun routes
+
+    Route::get('/admin/countdown', [CountdownController::class, 'edit'])->name('countdown.edit');
+    Route::post('/admin/countdown', [CountdownController::class, 'save'])->name('countdown.save');
+
+    // Public JSON (optional; useful for frontend widgets anywhere)
+    Route::get('/countdown.json', [CountdownController::class, 'json'])->name('countdown.json');
 });

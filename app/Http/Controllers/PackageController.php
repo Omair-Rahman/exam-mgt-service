@@ -12,7 +12,6 @@ class PackageController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
         $this->middleware('permission:list')->only('index');
         $this->middleware('permission:create')->only(['create', 'store']);
         $this->middleware('permission:update')->only(['edit', 'update']);

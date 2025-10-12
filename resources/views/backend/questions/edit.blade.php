@@ -3,13 +3,23 @@
 
 @section('content')
 <div class="row mt-3">
+    <div class="col-12">
+        <div class="card" style="padding: 0px 10px;">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Question Year</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Update Question</h4>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-3">
   <div class="col-12">
     <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Edit Question</h5>
-        <a href="{{ route('questions.index') }}" class="btn btn-outline-secondary">Back</a>
-      </div>
-
       @if($errors->any())
         <div class="alert alert-danger m-3">
           <ul class="mb-0">
@@ -65,7 +75,7 @@
 
           <div class="mb-3">
             <label>Question (unique)</label>
-            <textarea name="question" class="form-control editor" rows="4" required>
+            <textarea name="question" class="form-control" rows="4" required>
               {{ old('question',$question->question) }}
             </textarea>
           </div>
@@ -73,25 +83,25 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label>Ans 1</label>
-              <textarea name="answer_1" class="form-control editor" rows="3" required>
+              <textarea name="answer_1" class="form-control" rows="3" required>
                 {{ old('answer_1',$question->answer_1) }}
               </textarea>
             </div>
             <div class="col-md-6 mb-3">
               <label>Ans 2</label>
-              <textarea name="answer_2" class="form-control editor" rows="3" required>
+              <textarea name="answer_2" class="form-control" rows="3" required>
                 {{ old('answer_2',$question->answer_2) }}
               </textarea>
             </div>
             <div class="col-md-6 mb-3">
               <label>Ans 3</label>
-              <textarea name="answer_3" class="form-control editor" rows="3" required>
+              <textarea name="answer_3" class="form-control" rows="3" required>
                 {{ old('answer_3',$question->answer_3) }}
               </textarea>
             </div>
             <div class="col-md-6 mb-3">
               <label>Ans 4</label>
-              <textarea name="answer_4" class="form-control editor" rows="3" required>
+              <textarea name="answer_4" class="form-control" rows="3" required>
                 {{ old('answer_4',$question->answer_4) }}
               </textarea>
             </div>
@@ -111,7 +121,7 @@
             </div>
             <div class="col-md-9 mb-3">
               <label>Why correct (Explanation)</label>
-              <textarea name="explanation" class="form-control editor" rows="3">
+              <textarea name="explanation" class="form-control" rows="3">
                 {{ old('explanation',$question->explanation) }}
               </textarea>
             </div>
@@ -124,7 +134,7 @@
               Active
             </label>
           </div>
-
+          <a href="{{ route('questions.index') }}" class="btn btn-outline-secondary">Back</a>
           <button class="btn btn-primary">Update</button>
         </form>
       </div>

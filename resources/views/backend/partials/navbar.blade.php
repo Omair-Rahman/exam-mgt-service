@@ -26,10 +26,7 @@
             <ul id="side-menu">
 
                 @php
-                    /** @var \App\Models\User|null $u */
                     $u = auth()->user();
-
-                    // open the collapse when any dashboard route is active
                     $dashOpen = request()->routeIs('dashboard') || request()->routeIs('dashboard.*');
                 @endphp
 
@@ -46,10 +43,10 @@
                             <ul class="nav-second-level">
 
                                 {{-- Admin Dashboard: super_admin + admin --}}
-                                @if ($u->hasAnyRole(['super_admin', 'admin']) && Route::has('dashboard'))
+                                @if ($u->hasAnyRole(['super_admin', 'admin']) && Route::has('dashboard.admin'))
                                     <li>
-                                        <a href="{{ route('dashboard') }}"
-                                            class="tp-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                                        <a href="{{ route('dashboard.admin') }}"
+                                            class="tp-link {{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
                                             Admin Dashboard
                                         </a>
                                     </li>
@@ -94,68 +91,82 @@
                                         </a>
                                     </li>
                                 @endif
-
                             </ul>
                         </div>
                     </li>
                 @endauth
 
+                {{-- Examinee has no permission --}}
+                @if (!$u->hasAnyRole(['examinee']))
+                    <li class="menu-title">Pages</li>
+                    <li>
+                        <a href="#sidebarcategories" data-bs-toggle="collapse">
+                            <i class="mdi mdi-arrow-decision-outline"></i>
+                            <span> Categories </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarcategories">
+                            <ul class="nav-second-level">
+                                <li>
+                                    <a href="{{ route('categories.index') }}" class="tp-link">Category</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('subcategories.index') }}" class="tp-link">Sub Category</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{{ route('packages.index') }}" class="tp-link">
+                            <i data-feather="columns"></i>
+                            <span> Packages </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('question_years.index') }}" class="tp-link">
+                            <i class="mdi mdi-yeast"></i>
+                            <span> Question Years </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#sidebarMaps" data-bs-toggle="collapse">
+                            <i data-feather="map"></i>
+                            <span> Question's </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarMaps">
+                            <ul class="nav-second-level">
+                                <li>
+                                    <a href="{{ route('questions.index') }}" class="tp-link">Question</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('questions.table.all') }}" class="tp-link">Question List</a>
+                                </li>
 
-                <li class="menu-title">Pages</li>
-                <li>
-                    <a href="#sidebarcategories" data-bs-toggle="collapse">
-                        <i class="mdi mdi-arrow-decision-outline"></i>
-                        <span> Categories </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="sidebarcategories">
-                        <ul class="nav-second-level">
-                            <li>
-                                <a href="{{ route('categories.index') }}" class="tp-link">Category</a>
-                            </li>
-                            <li>
-                                <a href="{{ route('subcategories.index') }}" class="tp-link">Sub Category</a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-                <li>
-                    <a href="{{ route('users.index') }}" class="tp-link">
-                        <i data-feather="columns"></i>
-                        <span> User Management </span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('packages.index') }}" class="tp-link">
-                        <i data-feather="columns"></i>
-                        <span> Packages List </span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('question_years.index') }}" class="tp-link">
-                        <i class="mdi mdi-yeast"></i>
-                        <span> Question Years </span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#sidebarMaps" data-bs-toggle="collapse">
-                        <i data-feather="map"></i>
-                        <span> Question's </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="sidebarMaps">
-                        <ul class="nav-second-level">
-                            <li>
-                                <a href="{{ route('questions.index') }}" class="tp-link">Question</a>
-                            </li>
-                            <li>
-                                <a href="{{ route('questions.table.all') }}" class="tp-link">Question List</a>
-                            </li>
-                           
-                        </ul>
-                    </div>
-                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{{ route('countdown.edit') }}" class="tp-link">
+                            <i class="mdi mdi-timer-check-outline"></i>
+                            <span> Timer </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('users.index') }}" class="tp-link">
+                            <i class="mdi mdi-account-star"></i>
+                            <span> User Management </span>
+                        </a>
+                    </li>
+                @endif
 
+                <li class="menu-title">FrontPages</li>
+                <li>
+                    <a href="{{ route('index') }}" class="tp-link">
+                        <i class="mdi mdi-home-import-outline"></i>
+                        <span> Home Page </span>
+                    </a>
+                </li>
 
             </ul>
 

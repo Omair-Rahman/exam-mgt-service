@@ -14,6 +14,7 @@ class ExamineeRegistrationController extends Controller
     {
         $identifier = session('otp_verified_identifier');
         abort_if(!$identifier, 403);
+
         return view('auth.otp.register', compact('identifier'));
     }
 
@@ -45,10 +46,33 @@ class ExamineeRegistrationController extends Controller
         ]);
 
         Auth::login($user);
-        $token = JWTAuth::fromUser($user);
+
+        $tokenCookie = null;
+
+        if (config('auth.guards.api.driver') === 'jwt') {
+            $token      = JWTAuth::fromUser(Auth::user());
+            $cookieName = config('jwt.cookie', 'token');
+            $minutes    = (int) config('jwt.ttl', 60);
+            $domain     = config('session.domain');
+            $secure     = (bool) config('session.secure', app()->environment('production'));
+            $sameSite   = config('session.same_site', 'lax'); // 'lax', 'strict', or 'none'
+
+            $tokenCookie = cookie()->make(
+                name: $cookieName,
+                value: $token,
+                minutes: $minutes,
+                path: '/',
+                domain: $domain,
+                secure: $secure,
+                httpOnly: true,
+                raw: false,
+                sameSite: $sameSite
+            );
+        }
+
         session()->forget('otp_verified_identifier');
 
-        return redirect()->route('dashboard.examinee')
-            ->cookie(cookie()->make('token', $token, 60, null, null, true, true, false, 'Lax'));
+        return redirect()->intended('dashboard.examinee')
+            ->withCookie($tokenCookie ?? cookie()->forget(config('jwt.cookie', 'token')));
     }
 }

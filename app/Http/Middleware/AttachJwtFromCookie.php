@@ -14,7 +14,7 @@ class AttachJwtFromCookie
      */
     public function handle(Request $request, Closure $next)
     {
-        if (! $request->bearerToken() && $token = $request->cookie('token')) {
+        if (! $request->bearerToken() && $token = $request->cookie(config('jwt.cookie', 'token'))) {
             $request->headers->set('Authorization', 'Bearer ' . $token);
         }
         return $next($request);

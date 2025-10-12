@@ -13,7 +13,22 @@
 @endpush
 
 {{-- Main dashboard content area --}}
-@section('content') 
+@section('content')
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Question Year</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Update Question Year -- : {{$questionYear->year}}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
     <form method="POST" action="{{ route('question_years.update', $questionYear) }}">
     @csrf @method('PUT')
         <div class="col-xl-6">

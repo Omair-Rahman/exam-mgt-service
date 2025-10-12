@@ -8,11 +8,23 @@
     </style>
 @endpush
 @section('content') {{-- Main dashboard content area --}}
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Packages</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Create A New Package</h4>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="col-xl-6 p-3 m-1">
         <div class="card p-3 m-1">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Create A New Package</h5>
-            </div><!-- end card header -->
             <form method="POST" action="{{ route('packages.store') }}">
                 @csrf
 

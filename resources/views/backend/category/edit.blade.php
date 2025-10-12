@@ -14,6 +14,21 @@
 
 {{-- Main dashboard content area --}}
 @section('content') 
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                            <li class="breadcrumb-item active">categories</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Update Category -- : {{$category->name}}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -22,10 +37,6 @@
         @method('PUT')
         <div class="col-xl-6">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Update Category</h5>
-                </div><!-- end card header -->
-
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">Name <span class="text-danger">*</span></label>

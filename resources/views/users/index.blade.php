@@ -3,63 +3,84 @@
 @section('title', 'Users') {{-- Title section --}}
 
 @push('css')
-    {{-- Page-specific styles go here --}}
-    {{-- DataTables CSS (kept same pattern as your Category index) --}}
     <link href="{{ asset('backend/assets/libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet"
         type="text/css" />
     <link href="{{ asset('backend/assets/libs/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css') }}" rel="stylesheet"
         type="text/css" />
     <style>
-        .userbtn {
+        .categorybtn {
             position: absolute;
             right: 20px;
             top: 20px;
         }
 
-        .userbtnlink {
+        .categorybtnlink {
             text-decoration: none;
+            color: #963B68 !important;
+        }
+
+        .categorybtn:hover .categorybtnlink {
+            color: #ffffff !important;
+        }
+
+        .categorybtnlink:hover {
+            color: #ffffff !important;
+        }
+
+        .butsty {
+            padding: 4px 6px !important;
+        }
+
+        .iconsty {
+            font-size: 20px !important;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="row">
+    <div class="row mt-3">
         <div class="col-12">
-            {{-- Header --}}
-            <div class="page-title-box">
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="javascript:void(0);">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Users</li>
-                    </ol>
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript:void(0);">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Users</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Users Information</h4>
                 </div>
-                <h4 class="page-title">Users</h4>
             </div>
+            {{-- Header --}}
 
-            {{-- Card header with add button (same style as Category index) --}}
-            <div class="card" style="position: relative;margin-bottom:50px;">
-                <div class="d-flex flex-wrap gap-2">
-                    <div class="btn-group userbtn" role="group" aria-label="Default button group">
-                        <a href="{{ route('users.create') }}" class="btn btn-outline-primary userbtnlink">+ Add New User</a>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card" style="position: relative;margin-bottom:50px;">
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="btn-group categorybtn" role="group" aria-label="Default button group">
+                            <button type="button" class="btn btn-outline-secondary "> <a class="categorybtnlink"
+                                    href="{{ route('users.create') }}">Add New Employee</a></button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- Flash msgs --}}
-            @if (session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if (session('status'))
-                <div class="alert alert-success">{{ session('status') }}</div>
-            @endif
+                {{-- Flash msgs --}}
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if (session('status'))
+                    <div class="alert alert-success">{{ session('status') }}</div>
+                @endif
 
-            {{-- Table --}}
-            <div class="card">
+                {{-- Table --}}
                 <div class="card-body">
                     <div class="table-responsive">
                         {{-- If you want plain Laravel pagination UI, keep this table idless.
                              If you want DataTables, keep #users-dt and init in @push('scripts'). --}}
-                        <table id="users-dt" class="table table-striped table-hover align-middle">
+                        <table id="datatable-buttons" class="table table-striped table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
@@ -86,7 +107,7 @@
                                                 style="width:38px;height:38px;object-fit:cover;">
                                         </td>
                                         <td class="fw-semibold">{{ $user->name }}</td>
-                                        <td>{{ ucfirst(str_replace('_', ' ', $user->role)) }}</td>
+                                        <td>{{ ucwords(str_replace('_', ' ', $user->role)) }}</td>
                                         <td>{{ $user->email ?: '—' }}</td>
                                         <td>{{ $user->phone ?: '—' }}</td>
                                         <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
@@ -110,26 +131,24 @@
                     @endif
                 </div>
             </div>
-
         </div>
     </div>
 @endsection
 
 @push('scripts')
-    {{-- Page-specific scripts go here --}}
-    {{-- DataTables JS (same pattern as your Category index) --}}
     <script src="{{ asset('backend/assets/libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
+
     <script src="{{ asset('backend/assets/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js') }}"></script>
     <script src="{{ asset('backend/assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js') }}"></script>
+
+    <script src="{{ asset('backend/assets/libs/datatables.net-buttons/js/buttons.colVis.min.js') }}"></script>
+    <script src="{{ asset('backend/assets/libs/datatables.net-buttons/js/buttons.flash.min.js') }}"></script>
+    <script src="{{ asset('backend/assets/libs/datatables.net-buttons/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ asset('backend/assets/libs/datatables.net-buttons/js/buttons.print.min.js') }}"></script>
+
     <script src="{{ asset('backend/assets/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js') }}"></script>
-    <script>
-        // OPTIONAL: enable DataTables if you prefer it over simple paginate links.
-        // If you keep paginate(), consider removing the DT init line below.
-        new DataTable('#users-dt', {
-            paging: false, // Laravel links handle paging; set true if you want DT paging.
-            ordering: true,
-            info: false,
-            searching: true
-        });
-    </script>
+
+    <script src="{{ asset('backend/assets/libs/datatables.net-keytable/js/dataTables.keyTable.min.js') }}"></script>
+
+    <script src="{{ asset('backend/assets/js/pages/datatable.init.js') }}"></script>
 @endpush

@@ -131,8 +131,7 @@
 
                 {{-- Social/example buttons (optional) --}}
                 <div class="grid grid-cols-1 gap-3">
-                    <button
-                        class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/10">
+                    <button class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-slate-200 hover:bg-white/10">
                         <a href="{{ route('otp.show') }}">Examinee? Sign in with OTP
                     </button>
                 </div>

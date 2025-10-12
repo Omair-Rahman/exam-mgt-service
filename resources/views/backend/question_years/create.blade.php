@@ -14,12 +14,27 @@
 
 {{-- Main dashboard content area --}}
 @section('content') 
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Question Year</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Create A New Question Year</h4>
+                </div>
+            </div>
+        </div>
+    </div>
     <form action="{{ route('question_years.store') }}" method="POST" class=" m-1 p-3">
         @csrf
         <div class="col-xl-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Create A New Question Year</h5>
+                    <h5 class="card-title mb-0"></h5>
                 </div><!-- end card header -->
 
                 <div class="card-body">

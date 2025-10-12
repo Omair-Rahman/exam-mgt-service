@@ -21,23 +21,24 @@ class OtpLoginController extends Controller
     public function send(Request $request)
     {
         $data = $request->validate([
-            'identifier' => 'required|string',
+            'identifier' => ['required', 'string', 'max:255'],
         ]);
 
         $identifier     = $data['identifier'];
-        $identifierType = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $identifier_type = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-        $code = (string) random_int(100000, 999999);
+        $code = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
 
-        Otp::create([
-            'identifier'      => $identifier,
-            'identifier_type' => $identifierType,
-            'code'            => $code,
-            'isVerified'      => false,
-            'expires_at'      => now()->addMinutes(5),
-        ]);
+        Otp::updateOrCreate(
+            ['identifier' => $identifier, 'identifier_type' => $identifier_type],
+            [
+                'code'       => $code,
+                'expires_at' => now()->addMinutes(5),
+                'isVerified' => false,
+            ]
+        );
 
-        if ($identifierType === 'email') {
+        if ($identifier_type === 'email') {
             $subject = 'Password Reset Code for Your Account';
             Mail::to($identifier)->send(new OtpMail($code, $subject));
         }
@@ -56,36 +57,62 @@ class OtpLoginController extends Controller
     public function verify(Request $request)
     {
         $data = $request->validate([
-            'identifier' => 'required|string',
-            'code'       => 'required|digits:6',
+            'identifier' => ['required', 'string', 'max:255'],
+            'code'       => ['required', 'digits:6'],
         ]);
 
         $otp = Otp::where('identifier', $data['identifier'])
+            ->where('code', $data['code'])
             ->where('isVerified', false)
-            ->where('expires_at', '>', now())
             ->latest()
             ->first();
 
-        if (! $otp || $otp->code !== $data['code']) {
-            return back()->withErrors(['code' => 'Invalid or expired OTP']);
+        $fail = fn() => back()->withErrors(['code' => 'Invalid code or expired. Please request a new code.']);
+
+        if (! $otp) {
+            return $fail();
         }
 
-        // mark consumed
-        $otp->update(['isVerified' => true]);
+        $otp->delete();
 
-        // if user exists & is examinee => login
+        if ($otp->isExpired()) {
+            return $fail();
+        }
+
         $user = User::where('email', $data['identifier'])
             ->orWhere('phone', $data['identifier'])->first();
 
         if ($user && $user->isRole('examinee')) {
             Auth::login($user);
 
-            $token = JWTAuth::fromUser($user);
-            return redirect()->route('dashboard')
-                ->cookie(cookie()->make('token', $token, 60, null, null, true, true, false, 'Lax'));
+            $tokenCookie = null;
+
+            if (config('auth.guards.api.driver') === 'jwt') {
+                $token      = JWTAuth::fromUser(Auth::user());
+                $cookieName = config('jwt.cookie', 'token');
+                $minutes    = (int) config('jwt.ttl', 60);
+                $domain     = config('session.domain');
+                $secure     = (bool) config('session.secure', app()->environment('production'));
+                $sameSite   = config('session.same_site', 'lax'); // 'lax', 'strict', or 'none'
+
+                $tokenCookie = cookie()->make(
+                    name: $cookieName,
+                    value: $token,
+                    minutes: $minutes,
+                    path: '/',
+                    domain: $domain,
+                    secure: $secure,
+                    httpOnly: true,
+                    raw: false,
+                    sameSite: $sameSite
+                );
+            }
+
+            return redirect()->intended('/examinee')
+                ->withCookie($tokenCookie ?? cookie()->forget(config('jwt.cookie', 'token')));
         }
 
-        // otherwise go to first-time registration
+        // first-time registration for examinee
         session(['otp_verified_identifier' => $data['identifier']]);
         return redirect()->route('examinee.register.show');
     }

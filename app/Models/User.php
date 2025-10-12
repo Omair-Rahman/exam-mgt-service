@@ -1,7 +1,7 @@
 <?php
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -17,7 +17,18 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var list<string>
      */
-    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'image', 'role_id'];
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'role',
+        'image',
+        'education_level',
+        'institute_name',
+        'gender',
+        'date_of_birth'
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -36,6 +47,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'date_of_birth'     => 'date',
         ];
     }
 
@@ -44,7 +56,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
-    public function permissions() // direct overrides
+    public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'user_permission')->withTimestamps();
     }

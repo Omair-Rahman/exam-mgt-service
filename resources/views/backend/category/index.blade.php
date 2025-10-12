@@ -37,10 +37,22 @@
     <!-- Button Datatable -->
     <div class="row mt-3">
         <div class="col-12">
+            <div class="card" style="padding: 0px 10px;">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript:void(0);">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Categories</li>
+                        </ol>
+                    </div>
+                    <h4 class="page-title">Category Information</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Category Information</h5>
-                </div><!-- end card header -->
                 <div class="card" style="position: relative;margin-bottom:50px;">
                     <div class="d-flex flex-wrap gap-2">
                         <div class="btn-group categorybtn" role="group" aria-label="Default button group">
@@ -101,48 +113,47 @@
 
 
 @push('scripts')   {{-- Page-specific scripts go here --}}
+
+    <script src="{{asset('backend/assets/libs/datatables.net/js/jquery.dataTables.min.js')}}"></script>
+
+    <script src="{{asset('backend/assets/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js')}}"></script>
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js')}}"></script>
+
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.colVis.min.js')}}"></script>
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.flash.min.js')}}"></script>
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.html5.min.js')}}"></script>
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.print.min.js')}}"></script>
+
+    <script src="{{asset('backend/assets/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js')}}"></script>
     
-       
-        <script src="{{asset('backend/assets/libs/datatables.net/js/jquery.dataTables.min.js')}}"></script>
+    <script src="{{asset('backend/assets/libs/datatables.net-keytable/js/dataTables.keyTable.min.js')}}"></script>
+    
+    <script src="{{asset('backend/assets/js/pages/datatable.init.js')}}"></script>
 
-        <script src="{{asset('backend/assets/libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js')}}"></script>
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js')}}"></script>
+    {{-- SweetAlert delete confirm --}}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-delete');
+            if (!btn) return;
 
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.colVis.min.js')}}"></script>
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.flash.min.js')}}"></script>
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.html5.min.js')}}"></script>
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons/js/buttons.print.min.js')}}"></script>
+            const formId = btn.getAttribute('data-target-form');
+            const form = document.getElementById(formId);
+            if (!form) return;
 
-        <script src="{{asset('backend/assets/libs/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js')}}"></script>
-       
-        <script src="{{asset('backend/assets/libs/datatables.net-keytable/js/dataTables.keyTable.min.js')}}"></script>
-        
-        <script src="{{asset('backend/assets/js/pages/datatable.init.js')}}"></script>
-
-        {{-- SweetAlert delete confirm --}}
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.body.addEventListener('click', function (e) {
-                const btn = e.target.closest('.btn-delete');
-                if (!btn) return;
-
-                const formId = btn.getAttribute('data-target-form');
-                const form = document.getElementById(formId);
-                if (!form) return;
-
-                Swal.fire({
-                title: 'Are you sure?',
-                text: "This action can't be undone.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, delete',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true,
-                focusCancel: true
-                }).then((result) => {
-                if (result.isConfirmed) form.submit();
-                });
+            Swal.fire({
+            title: 'Are you sure?',
+            text: "This action can't be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true
+            }).then((result) => {
+            if (result.isConfirmed) form.submit();
             });
         });
-        </script>
+    });
+    </script>
 @endpush

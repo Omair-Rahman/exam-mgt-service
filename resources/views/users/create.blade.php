@@ -68,7 +68,6 @@
                                 Permissions <span class="text-danger">*</span>
                                 <small class="text-muted">(Select at least one)</small>
                             </label>
-
                             <div class="row g-2">
                                 @php $oldPerms = collect(old('permissions', []))->map(fn($v) => (int)$v)->all(); @endphp
                                 @foreach ($permissions as $perm)
@@ -84,11 +83,11 @@
                                     </div>
                                 @endforeach
                             </div>
-
                             @error('permissions')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                         </div>
+
 
                         {{-- Name --}}
                         <div class="mb-3">
@@ -112,11 +111,56 @@
                         </div>
                         <small class="text-muted d-block mb-3">Provide at least one: <b>Email</b> or <b>Phone</b>.</small>
 
+                        {{-- Education & Personal Info --}}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Education Level</label>
+                                <input type="text" name="education_level" value="{{ old('education_level') }}"
+                                    class="form-control" placeholder="e.g., Bachelor in CSE">
+                                @error('education_level')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Institute Name</label>
+                                <input type="text" name="institute_name" value="{{ old('institute_name') }}"
+                                    class="form-control" placeholder="e.g., University of Dhaka">
+                                @error('institute_name')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gender</label>
+                                <select name="gender" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>Male</option>
+                                    <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>Female
+                                    </option>
+                                    <option value="other" {{ old('gender') === 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('gender')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                                    class="form-control">
+                                @error('date_of_birth')
+                                    <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         {{-- Profile Image --}}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Profile Image</label>
-                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                <input type="file" name="image" id="image" class="form-control"
+                                    accept="image/*">
                                 @error('image')
                                     <div class="text-danger small">{{ $message }}</div>
                                 @enderror
@@ -150,15 +194,25 @@
 @endsection
 
 @push('scripts')
-    {{-- Page-specific scripts go here --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const roleSel = document.getElementById('role');
-            const pwdWrap = document.getElementById('password-wrapper');
-            const pwd = document.getElementById('password');
+            const permissionsBlock = document.getElementById('permissions-block');
             const form = document.querySelector('form');
             const email = document.getElementById('email');
             const phone = document.getElementById('phone');
+            const pwdWrap = document.getElementById('password-wrapper');
+            const pwd = document.getElementById('password');
+            const image = document.getElementById('image');
+            const imagePreview = document.getElementById('imagePreview');
+
+            function roleRequiresPerms(val) {
+                return val && !['super_admin', 'examinee'].includes(val);
+            }
+
+            function togglePermissions() {
+                permissionsBlock.style.display = roleRequiresPerms(roleSel.value) ? '' : 'none';
+            }
 
             function togglePassword() {
                 if (roleSel.value === 'examinee') {
@@ -170,7 +224,12 @@
                     pwd.removeAttribute('disabled');
                 }
             }
-            roleSel.addEventListener('change', togglePassword);
+
+            roleSel.addEventListener('change', () => {
+                togglePermissions();
+                togglePassword();
+            });
+            togglePermissions();
             togglePassword();
 
             // Front-end guard: require email or phone
@@ -178,44 +237,30 @@
                 if (!email.value.trim() && !phone.value.trim()) {
                     e.preventDefault();
                     alert('Please provide at least one contact: Email or Phone.');
+                    return;
+                }
+
+                // Only require permissions when role needs them
+                if (roleRequiresPerms(roleSel.value)) {
+                    const checked = document.querySelectorAll('input[name="permissions[]"]:checked');
+                    if (checked.length === 0) {
+                        e.preventDefault();
+                        alert('Please select at least one permission.');
+                        return;
+                    }
                 }
             });
 
             // Live preview
-            image.addEventListener('change', function() {
-                const file = this.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = e => imagePreview.src = e.target.result;
-                reader.readAsDataURL(file);
-            });
-        });
-    </script>
-@endpush
-
-@push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const roleSel = document.getElementById('role');
-            const permissionsBlock = document.getElementById('permissions-block');
-            const form = document.querySelector('form');
-
-            function togglePermissions() {
-                permissionsBlock.style.display = roleSel.value ? '' : 'none';
+            if (image) {
+                image.addEventListener('change', function() {
+                    const file = this.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = e => imagePreview.src = e.target.result;
+                    reader.readAsDataURL(file);
+                });
             }
-            roleSel.addEventListener('change', togglePermissions);
-            togglePermissions(); // on load (respects old('role'))
-
-            // Require at least one permission
-            form.addEventListener('submit', function(e) {
-                if (!roleSel.value) return; // role validator will handle this
-
-                const checked = document.querySelectorAll('input[name="permissions[]"]:checked');
-                if (checked.length === 0) {
-                    e.preventDefault();
-                    alert('Please select at least one permission.');
-                }
-            });
         });
     </script>
 @endpush

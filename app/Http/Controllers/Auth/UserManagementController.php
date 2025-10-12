@@ -19,7 +19,7 @@ class UserManagementController extends Controller
         $this->middleware('permission:update')->only(['edit', 'update']);
         $this->middleware('permission:delete')->only('destroy');
     }
-    
+
     public function index()
     {
         $users = User::latest()->paginate(15);
@@ -28,7 +28,17 @@ class UserManagementController extends Controller
 
     public function create()
     {
-        $roles       = DB::table('roles')->orderBy('name')->get(['id', 'slug', 'name']);
+        $roles = DB::table('roles')
+            ->where('slug', '<>', 'super_admin')
+            ->when(DB::table('users')->where('role', 'admin')->count() >= 4, function ($q) {
+                $q->where('slug', '<>', 'admin');
+            })
+            ->when(DB::table('users')->where('role', 'manager')->count() >= 10, function ($q) {
+                $q->where('slug', '<>', 'manager');
+            })
+            ->orderBy('name')
+            ->get(['id', 'slug', 'name']);
+
         $permissions = DB::table('permissions')->orderBy('name')->get(['id', 'slug', 'name']);
 
         return view('users.create', compact('roles', 'permissions'));
@@ -39,27 +49,31 @@ class UserManagementController extends Controller
         $rules = [
             'role'     => ['required', 'exists:roles,slug'],
             'name'     => ['required', 'string', 'max:120'],
-            'email'    => ['nullable', 'email', 'required_without:phone'],
-            'phone'    => ['nullable', 'string', 'max:20', 'required_without:email'],
+            'email'    => ['nullable', 'email', 'required_without:phone', 'max:191', 'unique:users,email'],
+            'phone'    => ['nullable', 'string', 'max:20', 'required_without:email', 'unique:users,phone'],
             'password' => ['nullable', 'string', 'min:8'],
             'image'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'education_level' => ['nullable', 'string', 'max:120'],
+            'institute_name'  => ['nullable', 'string', 'max:191'],
+            'gender'          => ['nullable', 'in:male,female,other'],
+            'date_of_birth'   => ['nullable', 'date', 'before:today'],
         ];
 
-        if ($request->role !== 'super_admin') {
+        if (!in_array($request->input('role'), ['super_admin', 'examinee'])) {
             $rules['permissions']   = ['required', 'array', 'min:1'];
             $rules['permissions.*'] = ['integer', 'exists:permissions,id'];
         }
 
-        $request->validate($rules, [], [
+        $data = $request->validate($rules, [], [
             'permissions' => 'permissions',
         ]);
 
         $creator    = Auth::user();
-        $targetRole = $request->role;
+        $targetRole = $data['role'];
 
         $allowed = match ($creator->role) {
-            'super_admin' => in_array($targetRole, ['super_admin', 'admin', 'examinee']),
-            'admin'       => in_array($targetRole, ['employee', 'examinee']),
+            'super_admin' => in_array($targetRole, ['admin', 'examinee', 'employee'], true),
+            'admin'       => in_array($targetRole, ['employee', 'examinee'], true),
             'employee'    => $targetRole === 'examinee',
             default       => false,
         };
@@ -78,23 +92,28 @@ class UserManagementController extends Controller
             'password' => $targetRole === 'examinee' ? null : ($request->password ? bcrypt($request->password) : bcrypt('password')),
             'role'     => $targetRole,
             'image'    => $imagePath,
+            'education_level' => $request->education_level,
+            'institute_name'  => $request->institute_name,
+            'gender'          => $request->gender,
+            'date_of_birth'   => $request->date_of_birth,
         ]);
 
-        if ($targetRole !== 'super_admin') {
+        if (!in_array($targetRole, ['super_admin', 'examinee'])) {
             $rows = collect($request->permissions)->map(fn($pid) => [
                 'user_id'       => $user->id,
                 'permission_id' => $pid,
             ]);
-        }
 
-        DB::table('user_permission')->insert($rows->all());
+            if ($rows->isNotEmpty()) {
+                DB::table('user_permission')->insert($rows->all());
+            }
+        }
 
         return redirect()->route('users.index')->with('status', 'User created.');
     }
 
     public function edit(User $user)
     {
-        $roles       = DB::table('roles')->orderBy('name')->get(['id', 'slug', 'name']);
         $permissions = DB::table('permissions')->orderBy('name')->get(['id', 'slug', 'name']);
 
         $user_permission_ids = DB::table('user_permission as up')
@@ -103,22 +122,26 @@ class UserManagementController extends Controller
             ->pluck('p.id')
             ->toArray();
 
-        return view('users.edit', compact('user', 'user_permission_ids', 'roles', 'permissions'));
+        return view('users.edit', compact('user', 'user_permission_ids', 'permissions'));
     }
 
     public function update(Request $request, User $user)
     {
         $rules = [
-            'role'            => 'required|in:super_admin,admin,employee,examinee',
-            'name'            => 'required|string|max:120',
-            'email'           => 'nullable|email|required_without:phone',
-            'phone'           => 'nullable|string|max:20|required_without:email',
-            'change_password' => 'nullable|boolean',
-            'password'        => 'nullable|string|min:8',
-            'image'           => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'role'            => ['required', 'exists:roles,slug'],
+            'name'            => ['required', 'string', 'max:120'],
+            'email'           => ['nullable', 'email', 'required_without:phone', 'max:191'],
+            'phone'           => ['nullable', 'string', 'max:20', 'required_without:email'],
+            'change_password' => ['nullable', 'boolean'],
+            'password'        => ['nullable', 'string', 'min:8'],
+            'image'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'education_level' => ['nullable', 'string', 'max:120'],
+            'institute_name'  => ['nullable', 'string', 'max:191'],
+            'gender'          => ['nullable', 'in:male,female,other'],
+            'date_of_birth'   => ['nullable', 'date', 'before:today'],
         ];
 
-        if ($request->input('role') !== 'super_admin') {
+        if (!in_array($request->input('role'), ['super_admin', 'examinee'])) {
             $rules['permissions']   = ['required', 'array', 'min:1'];
             $rules['permissions.*'] = ['integer', 'exists:permissions,id'];
         }
@@ -129,8 +152,9 @@ class UserManagementController extends Controller
 
         $creator    = Auth::user();
         $targetRole = $data['role'];
+
         $allowed    = match ($creator->role) {
-            'super_admin' => in_array($targetRole, ['super_admin', 'admin', 'examinee']),
+            'super_admin' => in_array($targetRole, ['admin', 'examinee', 'employee']),
             'admin'       => in_array($targetRole, ['employee', 'examinee']),
             'employee'    => $targetRole === 'examinee',
             default       => false,
@@ -142,6 +166,10 @@ class UserManagementController extends Controller
             'name'  => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'],
+            'education_level' => $data['education_level'] ?? null,
+            'institute_name'  => $data['institute_name'] ?? null,
+            'gender'          => $data['gender'] ?? null,
+            'date_of_birth'   => $data['date_of_birth'] ?? null,
         ];
 
         if (! empty($data['password']) && $creator->id === $user->id && $request->boolean('change_password')) {
@@ -160,15 +188,53 @@ class UserManagementController extends Controller
 
         DB::table('user_permission')->where('user_id', $user->id)->delete();
 
-        if ($targetRole !== 'super_admin') {
+        if (!in_array($targetRole, ['super_admin', 'examinee'])) {
             $rows = collect($data['permissions'])->map(fn($pid) => [
                 'user_id'       => $user->id,
                 'permission_id' => $pid,
             ]);
+
+            if ($rows->isNotEmpty()) {
+                DB::table('user_permission')->insert($rows->all());
+            }
         }
 
-        DB::table('user_permission')->insert($rows->all());
-
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
+    }
+
+    public function details(Request $request)
+    {
+        $user = DB::table('users as u')
+            ->join('roles as r', 'u.role', 'r.slug')
+            ->select(
+                'u.id',
+                'u.name',
+                'u.email',
+                'u.phone',
+                'r.name as role',
+                'r.slug',
+                'u.image',
+                'u.education_level',
+                'u.institute_name',
+                'u.gender',
+                'u.date_of_birth'
+            )
+            ->where('u.id', $request->id)
+            ->first();
+
+        if ($user) {
+            $permissions = DB::table('permissions as p')
+                ->join('user_permission as up', 'up.permission_id', '=', 'p.id')
+                ->where('up.user_id', $request->id)
+                ->orderBy('p.name')
+                ->get(['p.id', 'p.slug', 'p.name']);
+        }
+
+        return view('users.details', compact('user', 'permissions'));
+    }
+
+    public function profile(Request $request, User $user)
+    {
+        return view('profile.edit', compact('user'));
     }
 }
