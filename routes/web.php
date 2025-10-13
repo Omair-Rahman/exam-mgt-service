@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/{user}/edit', [UserManagementController::class, 'profile'])->name('edit');
+        Route::put('/', [UserManagementController::class, 'profile_update'])->name('update');
     });
 
     // category routes

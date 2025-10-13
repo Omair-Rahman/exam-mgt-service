@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class UserManagementController extends Controller
 {
@@ -72,8 +73,9 @@ class UserManagementController extends Controller
         $targetRole = $data['role'];
 
         $allowed = match ($creator->role) {
-            'super_admin' => in_array($targetRole, ['admin', 'examinee', 'employee'], true),
-            'admin'       => in_array($targetRole, ['employee', 'examinee'], true),
+            'super_admin' => true,
+            'admin'       => in_array($targetRole, ['manager', 'employee', 'adv_user', 'examinee'], true),
+            'Manager'     => in_array($targetRole, ['employee', 'adv_user', 'examinee'], true),
             'employee'    => $targetRole === 'examinee',
             default       => false,
         };
@@ -153,9 +155,10 @@ class UserManagementController extends Controller
         $creator    = Auth::user();
         $targetRole = $data['role'];
 
-        $allowed    = match ($creator->role) {
-            'super_admin' => in_array($targetRole, ['admin', 'examinee', 'employee']),
-            'admin'       => in_array($targetRole, ['employee', 'examinee']),
+        $allowed = match ($creator->role) {
+            'super_admin' => true,
+            'admin'       => in_array($targetRole, ['manager', 'employee', 'adv_user', 'examinee'], true),
+            'Manager'     => in_array($targetRole, ['employee', 'adv_user', 'examinee'], true),
             'employee'    => $targetRole === 'examinee',
             default       => false,
         };
@@ -236,5 +239,54 @@ class UserManagementController extends Controller
     public function profile(Request $request, User $user)
     {
         return view('profile.edit', compact('user'));
+    }
+
+    public function profile_update(Request $request)
+    {
+        $user = $request->user();
+
+        $rules = [
+            'name'             => ['required', 'string', 'max:100'],
+            'education_level'  => ['nullable', 'string', 'max:150'],
+            'institute_name'   => ['nullable', 'string', 'max:150'],
+            'gender'           => ['nullable', 'in:male,female,other'],
+            'date_of_birth'    => ['nullable', 'date', 'before:today'],
+            'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ];
+
+        if (empty($user->email)) {
+            $rules['email'] = ['nullable', 'email', 'max:150'];
+        }
+
+        if (empty($user->phone)) {
+            $rules['phone'] = ['nullable', 'string', 'max:20'];
+        }
+
+        $validated = $request->validate($rules);
+
+        if (!empty($user->email)) {
+            unset($validated['email']);
+        }
+        if (!empty($user->phone)) {
+            unset($validated['phone']);
+        }
+
+        if (!empty($validated['date_of_birth'])) {
+            $validated['date_of_birth'] = Carbon::parse($validated['date_of_birth'])->format('Y-m-d');
+        }
+
+        if ($request->hasFile('image')) {
+            if (!empty($user->image) && Storage::disk('public')->exists($user->image)) {
+                Storage::disk('public')->delete($user->image);
+            }
+
+            $path = $request->file('image')->store('users', 'public');
+            $validated['image'] = $path;
+        }
+
+        $user->fill($validated)->save();
+
+
+        return redirect()->route('users.details', ['id' => $user->id])->with('success', 'Profile updated successfully.');
     }
 }
